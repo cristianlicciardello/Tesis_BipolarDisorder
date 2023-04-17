@@ -1,0 +1,6 @@
+instalar:
+
+conda install numpy
+conda install pandas
+pip install -U scikit-learn
+pip install pyTelegramBotAPI
