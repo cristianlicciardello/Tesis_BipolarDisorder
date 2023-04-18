@@ -1,14 +1,14 @@
 # Tesis_BipolarDisorder
 
-Repositorio para el an�lisis de los datos de desorden de bipolaridad, pruebas de algoritmos de ML y desarrollo de un bot de Telegram.
+Repositorio para el analisis de los datos de desorden de bipolaridad, pruebas de algoritmos de ML y desarrollo de un bot de Telegram.
 
-## Tecnolog�as usadas
+## Tecnologias usadas
 
 - [Python](https://www.python.org/)
 - [Jupyter Notebook](http://jupyter.org/)
 - [TeleBot](https://pypi.org/project/pyTelegramBotAPI/)
 
-## Instalaci�n
+## Instalacion
 
 ### Opcional
 
