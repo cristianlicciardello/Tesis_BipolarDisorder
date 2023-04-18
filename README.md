@@ -22,9 +22,15 @@ Repositorio para el an�lisis de los datos de desorden de bipolaridad, pruebas 
 
 ### Paquetes
 
+`conda install jupyter`
+
 `conda install numpy`
 
-`conda install`
+`conda install pandas`
+
+`conda install matplotlib`
+
+`conda install seaborn`
 
 `conda install scikit-learn`
 
