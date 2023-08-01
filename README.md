@@ -34,4 +34,8 @@ Repositorio para el analisis de los datos de desorden de bipolaridad, pruebas de
 
 `conda install scikit-learn`
 
+`conda install pydotplus`
+
+`conda install xgboost`
+
 `pip install pyTelegramBotAPI`
