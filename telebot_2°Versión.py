@@ -8,11 +8,19 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import io
 
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import cross_val_score
+from sklearn.tree import DecisionTreeClassifier
+
 features = {}
 
 
 bot = telebot.TeleBot("6242548752:AAEpxVC4y-4KgMy5hCY7A8xOIWjbP0YRopc")
 
+young = pd.read_csv('./diario.csv', sep=';')
+young = young[young['Código'] != 'O']
 
 @bot.message_handler(commands=['entrevista'])
 def bienvenida(pm):
@@ -218,8 +226,8 @@ def fin_entrevista(pm):
 
     sent_msg = bot.send_message(pm.chat.id, "Finalizo la entrevista, vamos a analizar los datos envidados...")
 
-    young = pd.read_csv('./diario.csv', sep=';')
-    young = young[young['Código'] != 'O']
+   
+   
 
     x=np.array([features["animo"], features["motivacion"], features["atencion"],
             features["irritabilidad"], features["ansiedad"], features["calidad_sueño"],
@@ -231,12 +239,44 @@ def fin_entrevista(pm):
     young.dropna()
     np.nan_to_num(young)
 
-    features["codigo"]='M'
-    
+    #Entrenamiento de datos
+
+    X_train, X_test, y_train, y_test = train_test_split(young.drop(["Código","Fecha","Alcohol","Otras drogas","Hora de despertar","Hora a la que te dormiste","Ciclo menstrual"],axis=1),young['Código'],test_size=0.33, random_state=10)
+
+    print(X_train)
+    print(X_test)
+    print(y_train)
+
+
+    rf = RandomForestClassifier(n_jobs=-1)
+    X_train2=X_train.iloc[1]
+
+    dt = DecisionTreeClassifier(max_depth=10, min_samples_leaf=15)
+    dt.fit(X_train, y_train)
+
+    rf.fit(X_train, y_train)
+    scores = cross_val_score(rf, X_test, y_test)
+    print ("Model accuracy: ", scores.mean())
+    print ("\n")
+    X_test2=X_test.iloc[1:2]
+
+    print(x)
+    y_pred_test=rf.predict(X_test)
+    y_pred=rf.predict(x)
+    print (y_pred)
+    features["codigo"]=y_pred[0]
     current_day = datetime.date.today()
     formatted_date = datetime.date.strftime(current_day, "%d/%m/%Y")
 
     features["fecha"]=formatted_date
+
+    print(accuracy_score(y_test,y_pred_test))
+    
+    print("La predicción de su estado a traves de algoritmo de Random Forest es; ", show_prediction(y_pred))
+    sent_msg = bot.send_message(pm.chat.id,"La predicción de su estado a traves de algoritmo de Random Forest es: ")
+    sent_msg = bot.send_message(pm.chat.id,show_prediction(rf.predict(x)))
+    sent_msg = bot.send_message(pm.chat.id,"La predicción de su estado a traves de algoritmo de arbol de decisión es: ")
+    sent_msg = bot.send_message(pm.chat.id,show_prediction(dt.predict(x)))
 
 
     print ("\n")
@@ -248,25 +288,94 @@ def fin_entrevista(pm):
     
     youngNew.to_csv('./diario.csv', sep=';',index=False)
 
-#Guarda en el archivo los datos nuevos
+    #Guarda en el archivo los datos nuevos
     #youngNew.to_excel('Resultados.xlsx')
     sent_msg = bot.send_message(pm.chat.id,"Gracias por responder, Hasta luego")
     
 
+def show_prediction(pred):
+    msg = ''
+    if pred == 'D':
+        msg = ("El paciente podria tender hacia un episodio de DEPRESIÓN")
+    elif pred == 'M':
+        msg = ("El paciente podría tender hacía un episodio de MANIA")
+    else:
+        msg = ("El paciente posee un estado eutímico")
+    return msg
+
+
+
 @bot.message_handler(commands=['help'])
 def handle_help(message):
     chat_id = message.chat.id
-    help_message = "¡Bienvenido! Este bot te permite realizar una entrevista. Para comenzar, usa el comando /entrevista. "
-    help_message += "Sigue las instrucciones para responder las preguntas. Al final de la entrevista, se mostrarán los resultados con el comando /resultados."
+    help_message = "¡Bienvenido! Este bot te permite realizar una entrevista para evaluar tus características. Para comenzar, usa el comando /entrevista. "
+    help_message += "Sigue las instrucciones para responder las preguntas. Al final de la entrevista, podes evaluar tu seguimiento con el comando /resultados."
     bot.send_message(chat_id, help_message)
 
 
-@bot.message_handler(commands=['mostrar_grafico'])
+@bot.message_handler(commands=['resultados'])
+def resultados(message):
+    chat_id = message.chat.id
+    mensaje= "Para poder realizar tu seguimiento vas a poder evaluar tus resultados según distintos gráficos de analisis de datos. \n \n 1) Ingrese el comando '/temporal' para poder ver el análisis temporal de tus caracteristicas \n \n 2) Ingrese '/correlacion' para ver la relación entre carácteristicas \n \n 3) Ingrese el comando '/boxplot' para revisar la dispersion de datosa en formato de diagrama de cajas "
+    bot.send_message(chat_id, mensaje)
+
+@bot.message_handler(commands=['correlacion'])
+def mapa_correlacion(pm):
+    bot.send_message(pm.chat.id, "Aquí puedes observar como se relacionan tus datos.")
+    df=young["Código"]==features["codigo"]
+    dfC=young[df]
+    img_buffer = io.BytesIO()
+    plt.figure(figsize=(10, 10))
+    
+    sns.heatmap(
+        dfC.corr(),
+        annot= True,
+        cbar      = False,
+        annot_kws = {"size": 8},
+        vmin      = -1,
+        vmax      = 1,
+        center    = 0,
+        cmap      = sns.diverging_palette(20, 220, n=200),
+        square    = True,
+        )
+
+
+
+    plt.savefig(img_buffer, format='png')
+
+    img_buffer.seek(0)
+   
+
+    # Envía el gráfico al usuario a través de Telegram
+    bot.send_photo(pm.chat.id, photo=img_buffer)
+
+
+
+@bot.message_handler(commands=['boxplot'])
+def mapa_boxplot(pm):
+    bot.send_message(pm.chat.id, "Aquí puedes observar como se distribuyeron tus datos y cuales fueron valores atípicos.")
+    df=young["Código"]==features["codigo"]
+    dfC=young[df]
+    
+    img_buffer = io.BytesIO()
+    plt.figure(figsize=(8, 6))
+    dfC.boxplot(column=["Motivación","Calidad del sueño","Ansiedad","Irritabilidad","Estado de ánimo"],figsize=(15, 15))
+    plt.savefig(img_buffer, format='png')
+
+    img_buffer.seek(0)
+   
+
+    # Envía el gráfico al usuario a través de Telegram
+    bot.send_photo(pm.chat.id, photo=img_buffer)
+
+
+
+
+@bot.message_handler(commands=['temporal'])
 def generar_graficos(pm):
     bot.send_message(pm.chat.id, "Aquí puedes observar como variaron tus comportamientos en el ultimo tiempo.")
     # Utiliza las respuestas almacenadas en respuestas_entrevista[chat_id]
     # para generar tus gráficos
-    young = pd.read_csv('./diario.csv', sep=';')
     young['fecha_datetime'] = pd.to_datetime(young['Fecha'], format='%d/%m/%Y')
 
     filtrado=young[young["Código"]==features["codigo"]]
@@ -284,6 +393,8 @@ def generar_graficos(pm):
 
     # Envía el gráfico al usuario a través de Telegram
     bot.send_photo(pm.chat.id, photo=img_buffer)
+
+
 
 @bot.message_handler(func=lambda message: True)
 def handle_saludo(message):
