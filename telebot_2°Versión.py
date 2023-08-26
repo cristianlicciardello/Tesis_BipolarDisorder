@@ -3,11 +3,11 @@ import numpy as np
 import pandas as pd
 from telebot.types import ReplyKeyboardMarkup
 import re
-import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
 import io
-
+import datetime
+import timedelta
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
@@ -16,22 +16,28 @@ from sklearn.tree import DecisionTreeClassifier
 
 features = {}
 
-
+current_day = datetime.date.today()
+print(current_day)
 bot = telebot.TeleBot("6242548752:AAEpxVC4y-4KgMy5hCY7A8xOIWjbP0YRopc")
 
 young = pd.read_csv('./diario.csv', sep=';')
 young = young[young['Código'] != 'O']
 
+
+
+
+
+
 @bot.message_handler(commands=['entrevista'])
 def bienvenida(pm):
 
-    send_msg=bot.send_message(pm.chat.id, "Bienvenido a Bipotest, soy un asistente virtual que te ayudara con tu diagnóstico")
+    send_msg=bot.send_message(pm.chat.id, "Bienvenido a Bipotest, soy un asistente virtual 🤖 que te ayudara con tu diagnóstico y seguimiento de estado del trastorno bipolar")
     send_msg=bot.send_message(pm.chat.id, "¿Puedes indicarme tu nombre?")
     bot.register_next_step_handler(send_msg, saludar)
 
 def saludar(pm):
     nombre=pm.text
-    bot.send_message(pm.chat.id, "Hola "+nombre+", voy a asistirte con tu diagnostico virtual")
+    bot.send_message(pm.chat.id, "Hola 👋 "+nombre+", voy a asistirte con tu seguimiento virtual 📝")
     animo(pm)
 
 
@@ -118,7 +124,7 @@ def validar_ansiedad(pm):
         features["ansiedad"]=valor
         calidad_sueño(pm)
     else: 
-        sent_msg = bot.send_message(pm.chat.id, "El valor no se encuentra en el rango, Reingreselo por favor")
+        sent_msg = bot.send_message(pm.chat.id, "❌El valor no se encuentra en el rango, Reingreselo por favor❌")
         bot.register_next_step_handler(sent_msg, validar_ansiedad)
 
 
@@ -135,11 +141,11 @@ def validar_calidad(pm):
         features["calidad_sueño"]=valor
         cigarrillos(pm)
     else: 
-        sent_msg = bot.send_message(pm.chat.id, "El valor no se encuentra en el rango, Reingreselo por favor")
+        sent_msg = bot.send_message(pm.chat.id, "❌El valor no se encuentra en el rango, Reingreselo por favor❌")
         bot.register_next_step_handler(sent_msg, validar_calidad)
 
 def cigarrillos(pm):
-    sent_msg = bot.send_message(pm.chat.id, "Cantidad de cigarrillos ? ")
+    sent_msg = bot.send_message(pm.chat.id, "Cantidad de cigarrillos consumidos 🚬 ? ")
     bot.register_next_step_handler(sent_msg, validar_cigarrillos)
 
 def validar_cigarrillos(pm):
@@ -148,13 +154,13 @@ def validar_cigarrillos(pm):
         features["cigarrillos"]=valor
         cafeina(pm)
     else: 
-        sent_msg = bot.send_message(pm.chat.id, "El valor no se encuentra en el rango, Reingreselo por favor")
+        sent_msg = bot.send_message(pm.chat.id, "❌ El valor no se encuentra en el rango, Reingreselo por favor❌")
         bot.register_next_step_handler(sent_msg, validar_cigarrillos)
 
 
 
 def cafeina(pm):
-    sent_msg = bot.send_message(pm.chat.id, "Indique cantidad consumida de cafeina en mg, Te indico algunas referencias: \n\nTaza de té negro = 60 \nLata de Red Bull 250 ml = 80 \nLata de cola 330ml = 30 \nCafé exprés = 90")
+    sent_msg = bot.send_message(pm.chat.id, "Indique cantidad consumida de cafeina ☕ en mg, Te indico algunas referencias: \n\nTaza de té negro = 60 \nLata de Red Bull 250 ml = 80 \nLata de cola 330ml = 30 \nCafé exprés = 90")
     bot.register_next_step_handler(sent_msg, validar_cafeina)
 
 def validar_cafeina(pm):
@@ -163,11 +169,11 @@ def validar_cafeina(pm):
         features["cafeina"]=valor
         alcohol(pm)
     else: 
-        sent_msg = bot.send_message(pm.chat.id, "El valor no se encuentra en el rango, Reingreselo por favor")
+        sent_msg = bot.send_message(pm.chat.id, "❌ El valor no se encuentra en el rango, Reingreselo por favor❌ ")
         bot.register_next_step_handler(sent_msg, validar_cafeina)
 
 def alcohol(pm):
-    sent_msg = bot.send_message(pm.chat.id, "¿Consumio alcohol ? Ingrese Si o No")
+    sent_msg = bot.send_message(pm.chat.id, "¿Consumio alcohol 🍺 🍻 🍸 🍹 ? Ingrese Si o No")
     bot.register_next_step_handler(sent_msg, validar_alcohol)
 
 def validar_alcohol(pm):
@@ -180,7 +186,7 @@ def validar_alcohol(pm):
         bot.register_next_step_handler(sent_msg, validar_alcohol)
 
 def drogas(pm):
-    sent_msg = bot.send_message(pm.chat.id, "¿Consumio alguna droga? Ingrese Si o No")
+    sent_msg = bot.send_message(pm.chat.id, "¿Consumio alguna droga 💊? Ingrese Si o No")
     bot.register_next_step_handler(sent_msg, validar_drogas)
 
 def validar_drogas(pm):
@@ -189,7 +195,7 @@ def validar_drogas(pm):
         features["drogas"]=valor
         despertar(pm)
     else: 
-        sent_msg = bot.send_message(pm.chat.id, "Ingreso un valor incorrecto, Reingreselo por favor")
+        sent_msg = bot.send_message(pm.chat.id, " ❌ Ingreso un valor incorrecto, Reingreselo por favor ❌")
         bot.register_next_step_handler(sent_msg, validar_drogas)
 
 def despertar(pm):
@@ -203,7 +209,7 @@ def validar_despertar(pm):
         features["despertar"]=valor
         dormir(pm)
     else: 
-        sent_msg = bot.send_message(pm.chat.id, "El valor no se encuentra en el rango, Reingreselo por favor")
+        sent_msg = bot.send_message(pm.chat.id, "❌ El valor no se encuentra en el rango, Reingreselo por favor ❌")
         bot.register_next_step_handler(sent_msg, validar_despertar)
 
 
@@ -218,7 +224,7 @@ def validar_dormir(pm):
         features["dormir"]=valor
         fin_entrevista(pm)
     else: 
-        sent_msg = bot.send_message(pm.chat.id, "El valor no se encuentra en el rango, Reingreselo por favor")
+        sent_msg = bot.send_message(pm.chat.id, "❌ El valor no se encuentra en el rango, Reingreselo por favor ❌")
         bot.register_next_step_handler(sent_msg, validar_dormir)
     
 
@@ -265,7 +271,7 @@ def fin_entrevista(pm):
     y_pred=rf.predict(x)
     print (y_pred)
     features["codigo"]=y_pred[0]
-    current_day = datetime.date.today()
+    
     formatted_date = datetime.date.strftime(current_day, "%d/%m/%Y")
 
     features["fecha"]=formatted_date
@@ -316,7 +322,7 @@ def handle_help(message):
 @bot.message_handler(commands=['resultados'])
 def resultados(message):
     chat_id = message.chat.id
-    mensaje= "Para poder realizar tu seguimiento vas a poder evaluar tus resultados según distintos gráficos de analisis de datos. \n \n 1) Ingrese el comando '/temporal' para poder ver el análisis temporal de tus caracteristicas \n \n 2) Ingrese '/correlacion' para ver la relación entre carácteristicas \n \n 3) Ingrese el comando '/boxplot' para revisar la dispersion de datosa en formato de diagrama de cajas "
+    mensaje= "Para poder realizar tu seguimiento vas a poder evaluar tus resultados según distintos gráficos de analisis de datos. \n \n 1) Ingrese el comando '/temporal' para poder ver el análisis temporal de tus caracteristicas 🗓 \n \n 2) Ingrese '/correlacion' para ver la relación entre carácteristicas \n \n 3) Ingrese el comando '/boxplot' para revisar la dispersion de datosa en formato de diagrama de cajas "
     bot.send_message(chat_id, mensaje)
 
 @bot.message_handler(commands=['correlacion'])
@@ -374,15 +380,25 @@ def mapa_boxplot(pm):
 @bot.message_handler(commands=['temporal'])
 def generar_graficos(pm):
     bot.send_message(pm.chat.id, "Aquí puedes observar como variaron tus comportamientos en el ultimo tiempo.")
+    sent_msg=bot.send_message(pm.chat.id, "¿A partir de cuantos dias atras desea ver los comportamientos? Ingrese el numero de dias .")
+    bot.register_next_step_handler(sent_msg, limite_dias)
+
+def limite_dias(pm):    
     # Utiliza las respuestas almacenadas en respuestas_entrevista[chat_id]
     # para generar tus gráficos
-    young['fecha_datetime'] = pd.to_datetime(young['Fecha'], format='%d/%m/%Y')
+    dias=int(pm.text)
 
-    filtrado=young[young["Código"]==features["codigo"]]
+    young['fecha_datetime'] = pd.to_datetime(young['Fecha'], format='%d/%m/%Y')
+    limite_inferior = current_day - datetime.timedelta(days=dias)
+    
+    filtrado=young[(young["Código"]==features["codigo"])]
+                   
+    filtrado_fecha=filtrado[filtrado['fecha_datetime']>=pd.to_datetime(limite_inferior)]
+    
     plt.figure(figsize=(30, 10))
     caracteristicas=['Motivación','Calidad del sueño','Ansiedad','Irritabilidad','Estado de ánimo']
     for feature in caracteristicas:
-        sns.lineplot(x='fecha_datetime', y=feature,data=filtrado, label=feature)
+        sns.lineplot(x='fecha_datetime', y=feature,data=filtrado_fecha, label=feature)
     plt.xlabel('Fecha')
     plt.ylabel('Características')
     
@@ -404,6 +420,8 @@ def handle_saludo(message):
         bot.reply_to(message, "¡Hasta luego! Siempre estoy aquí si me necesitas.")
     else:
         bot.reply_to(message, "No entiendo lo que dices. ¿En qué puedo ayudarte? Para mayor información ingrese el comando /help")
+
+
 
 
 
