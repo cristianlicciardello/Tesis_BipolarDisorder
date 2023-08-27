@@ -15,7 +15,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.tree import DecisionTreeClassifier
 
 features = {}
-
+pacientes={}
 current_day = datetime.date.today()
 print(current_day)
 bot = telebot.TeleBot("6242548752:AAEpxVC4y-4KgMy5hCY7A8xOIWjbP0YRopc")
@@ -24,6 +24,34 @@ young = pd.read_csv('./diario.csv', sep=';')
 young = young[young['Código'] != 'O']
 
 
+
+#Funcionalidades que podrían agregarse al chatbot
+
+@bot.message_handler(commands=['solicitar_derivacion'])
+def solicitar_derivacion(message):
+    chat_id = message.chat.id
+    sent_msg=bot.send_message(chat_id, "Por favor, proporcione su nombre completo para solicitar la derivación.")
+    bot.register_next_step_handler(sent_msg, procesar_nombre)
+
+def procesar_nombre(message):
+    chat_id = message.chat.id
+    nombre_completo = message.text
+    pacientes[chat_id] = {'nombre_completo': nombre_completo}
+    sent_msg=bot.send_message(chat_id, "Gracias, ahora proporciona tu número de teléfono para que podamos contactarte.")
+    bot.register_next_step_handler(sent_msg, procesar_numero)
+
+def procesar_numero(message):
+    chat_id = message.chat.id
+    numero_telefono = message.text
+    pacientes[chat_id]['numero_telefono'] = numero_telefono
+    bot.send_message(chat_id, "Hemos registrado tu solicitud de derivación. Un profesional de la salud se pondrá en contacto contigo pronto.")
+    print(pacientes)
+
+@bot.message_handler(commands=['info'])
+def informacion(pm):
+    send_msg=bot.send_message(pm.chat.id, "Voy a darte mas información sobre la tarea de este chatbot : ")
+    send_msg=bot.send_message(pm.chat.id, "El asistente virtual resultante permitirá a los profesionales de la salud realizar un seguimiento más preciso y personalizado de los pacientes con trastorno bipolar. Además, proporcionará a los pacientes una herramienta de autoevaluación que les permitirá monitorear su estado y recibir recomendaciones para el autocuidado. Se espera que este sistema mejore la precisión del diagnóstico, reduzca los tiempos de espera para la intervención y mejore la calidad de vida de los pacientes con trastorno bipolar.")
+    
 
 
 
@@ -44,6 +72,7 @@ def saludar(pm):
 def animo(pm): 
     sent_msg = bot.send_message(pm.chat.id, "Resume cómo ha sido tu estado de ánimo en el día de hoy (en un rango de -3 a + 3),Siendo : \n\n-3)Grado máximo de depresión \n-2)grado intermedio de depresión \n-1)depresión leve, apenas perceptible \n0) Eutimia o normalidad \n1)euforia o irritabilidad leve, apenas perceptible \n2)grado intermedio de euforia o irritabilidad \n3)Grado máximo de euforia o irritabilidad")
     bot.register_next_step_handler(sent_msg, validar_animo)
+
 def validar_animo(pm):
     
     valor=int(pm.text)
@@ -51,7 +80,7 @@ def validar_animo(pm):
         features["animo"]=valor
         motivacion(pm)
     else: 
-        sent_msg = bot.send_message(pm.chat.id, "El valor no se encuentra en el rango, Reingreselo por favor")
+        sent_msg = bot.send_message(pm.chat.id, "❌El valor no se encuentra en el rango, Reingreselo por favor❌")
         bot.register_next_step_handler(sent_msg, validar_animo)
 
 def motivacion(pm):
@@ -61,7 +90,7 @@ def motivacion(pm):
         features["animo"]=valor
         motivacion(pm)
     else: 
-        sent_msg = bot.send_message(pm.chat.id, "El valor no se encuentra en el rango, Reingreselo por favor")
+        sent_msg = bot.send_message(pm.chat.id, "❌El valor no se encuentra en el rango, Reingreselo por favor❌")
         bot.register_next_step_handler(sent_msg, validar_animo)
 def motivacion(pm):   
     sent_msg = bot.send_message(pm.chat.id, "Indica tu grado de motivación(de -3 a 3). Se refiere a las ganas de hacer cosas, la energía y la actividad que has tenido durante este día. Debes marcar entre -3 y 3, Siendo: \n\n-3) Grado mínimo de motivación \n-2)Grado intermedio de motivación\n-1)Leve disminución en la motivación, apenas perceptible \n0)Motivación o energía media, normal.\n 1)Motivación o ganas de hacer cosas un poco aumentadas\n2)grado intermedio de motivación \n3) Grado Máximo de motivación ")
@@ -76,7 +105,7 @@ def validar_motivación(pm):
         features["motivacion"]=valor
         atencion(pm)
     else: 
-        sent_msg = bot.send_message(pm.chat.id, "El valor no se encuentra en el rango, Reingreselo por favor")
+        sent_msg = bot.send_message(pm.chat.id, "❌El valor no se encuentra en el rango, Reingreselo por favor❌")
         bot.register_next_step_handler(sent_msg, validar_motivación)
 
 
@@ -92,7 +121,7 @@ def validar_atencion(pm):
         features["atencion"]=valor
         irritabilidad(pm)
     else: 
-        sent_msg = bot.send_message(pm.chat.id, "El valor no se encuentra en el rango, Reingreselo por favor")
+        sent_msg = bot.send_message(pm.chat.id, "❌El valor no se encuentra en el rango, Reingreselo por favor❌")
         bot.register_next_step_handler(sent_msg, validar_atencion)
 
 
@@ -108,7 +137,7 @@ def validar_irritabilidad(pm):
         features["irritabilidad"]=valor
         ansiedad(pm)
     else: 
-        sent_msg = bot.send_message(pm.chat.id, "El valor no se encuentra en el rango, Reingreselo por favor")
+        sent_msg = bot.send_message(pm.chat.id, "❌El valor no se encuentra en el rango, Reingreselo por favor❌")
         bot.register_next_step_handler(sent_msg, validar_irritabilidad)
 
     
