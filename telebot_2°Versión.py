@@ -15,7 +15,8 @@ from sklearn.model_selection import cross_val_score
 from sklearn.tree import DecisionTreeClassifier
 
 features = {}
-pacientes={}
+df_pacientes = pd.DataFrame(columns=['chat_id', 'nombre_completo', 'numero_telefono'])
+
 current_day = datetime.date.today()
 print(current_day)
 bot = telebot.TeleBot("6242548752:AAEpxVC4y-4KgMy5hCY7A8xOIWjbP0YRopc")
@@ -30,22 +31,25 @@ young = young[young['Código'] != 'O']
 @bot.message_handler(commands=['solicitar_derivacion'])
 def solicitar_derivacion(message):
     chat_id = message.chat.id
+    
     sent_msg=bot.send_message(chat_id, "Por favor, proporcione su nombre completo para solicitar la derivación.")
     bot.register_next_step_handler(sent_msg, procesar_nombre)
 
 def procesar_nombre(message):
     chat_id = message.chat.id
     nombre_completo = message.text
-    pacientes[chat_id] = {'nombre_completo': nombre_completo}
+    df_pacientes.loc[df_pacientes.shape[0]] = [chat_id, nombre_completo, None]
     sent_msg=bot.send_message(chat_id, "Gracias, ahora proporciona tu número de teléfono para que podamos contactarte.")
     bot.register_next_step_handler(sent_msg, procesar_numero)
-
+    
 def procesar_numero(message):
     chat_id = message.chat.id
     numero_telefono = message.text
-    pacientes[chat_id]['numero_telefono'] = numero_telefono
+
+    df_pacientes.loc[df_pacientes['chat_id'] == chat_id, 'numero_telefono'] = numero_telefono
     bot.send_message(chat_id, "Hemos registrado tu solicitud de derivación. Un profesional de la salud se pondrá en contacto contigo pronto.")
-    print(pacientes)
+    df_pacientes.to_csv('datos_pacientes.csv', index=False)
+    
 
 @bot.message_handler(commands=['info'])
 def informacion(pm):
@@ -459,7 +463,7 @@ if __name__=='__main__':
 	print("********INICIANDO EL BOT**********")
     
 	bot.infinity_polling()
-    
+
 
     
 
