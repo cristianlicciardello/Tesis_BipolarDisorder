@@ -1,7 +1,8 @@
 import telebot
 import numpy as np
 import pandas as pd
-from telebot.types import ReplyKeyboardMarkup
+import telebot
+from telebot import types 
 import re
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -28,9 +29,9 @@ young = young[young['Código'] != 'O']
 
 #Funcionalidades que podrían agregarse al chatbot
 
-@bot.message_handler(commands=['solicitar_derivacion'])
-def solicitar_derivacion(message):
-    chat_id = message.chat.id
+@bot.callback_query_handler(func=lambda call: call.data == '/solicitar_derivacion')
+def solicitar_derivacion(call):
+    chat_id = call.message.chat.id
     
     sent_msg=bot.send_message(chat_id, "Por favor, proporcione su nombre completo para solicitar la derivación.")
     bot.register_next_step_handler(sent_msg, procesar_nombre)
@@ -60,11 +61,11 @@ def informacion(pm):
 
 
 
-@bot.message_handler(commands=['entrevista'])
+@bot.callback_query_handler(func=lambda call: call.data == '/entrevista')
 def bienvenida(pm):
-
-    send_msg=bot.send_message(pm.chat.id, "Bienvenido a Bipotest, soy un asistente virtual 🤖 que te ayudara con tu diagnóstico y seguimiento de estado del trastorno bipolar")
-    send_msg=bot.send_message(pm.chat.id, "¿Puedes indicarme tu nombre?")
+    chat_id=pm.message.chat.id
+    send_msg=bot.send_message(chat_id, "Bienvenido a Bipotest, soy un asistente virtual 🤖 que te ayudara con tu diagnóstico y seguimiento de estado del trastorno bipolar")
+    send_msg=bot.send_message(chat_id, "¿Puedes indicarme tu nombre?")
     bot.register_next_step_handler(send_msg, saludar)
 
 def saludar(pm):
@@ -273,6 +274,7 @@ def fin_entrevista(pm):
             features["cigarrillos"], features["cafeina"]]).reshape(1,-1)
     print(x)
     sent_msg = bot.send_message(pm.chat.id,"Los datos ingresados son los siguientes: ")
+
     sent_msg = bot.send_message(pm.chat.id,str(x))
 
     young.dropna()
@@ -329,8 +331,10 @@ def fin_entrevista(pm):
 
     #Guarda en el archivo los datos nuevos
     #youngNew.to_excel('Resultados.xlsx')
-    sent_msg = bot.send_message(pm.chat.id,"Gracias por responder, Hasta luego")
-    
+    markup = types.InlineKeyboardMarkup(row_width=3) 
+    itembtn = types.InlineKeyboardButton('Seguimiento de datos ', callback_data='/resultados') 
+    markup.add(itembtn)
+    bot.send_message(pm.chat.id,"Gracias por responder, si desea ver los análisis de su datos, pulse el boton para realizar el seguimiento ", reply_markup=markup) 
 
 def show_prediction(pred):
     msg = ''
@@ -347,14 +351,28 @@ def show_prediction(pred):
 @bot.message_handler(commands=['help'])
 def handle_help(message):
     chat_id = message.chat.id
-    help_message = "¡Bienvenido! Este bot te permite realizar una entrevista para evaluar tus características. Para comenzar, usa el comando /entrevista. "
-    help_message += "Sigue las instrucciones para responder las preguntas. Al final de la entrevista, podes evaluar tu seguimiento con el comando /resultados."
-    bot.send_message(chat_id, help_message)
+    help_message = "¡Bienvenido! Este bot te permite realizar una entrevista para evaluar tus características. \n Para comenzar, elige la opción que quieras realizar: /entrevista. "
+    help_message += "Sigue las instrucciones para responder las preguntas. Al final de la entrevista, podes evaluar tu seguimiento y ver gráficos de estado."
+    markup = types.InlineKeyboardMarkup(row_width=3) 
+    itembtn1 = types.InlineKeyboardButton('Entrevista', callback_data='/entrevista') 
+    itembtn2 = types.InlineKeyboardButton('Solicitar atención médica', callback_data='/solicitar_derivacion') 
+    markup.add(itembtn1, itembtn2)
+    bot.send_message(chat_id,help_message) 
+    bot.send_message(chat_id," Para comenzar, elige la opción que quieras realizar:", reply_markup=markup) 
 
+""""
+# Manejador para las respuestas a los botones
+@bot.callback_query_handler(func=lambda call: call.data == '/entrevista')
+def opcion1_handler(call):
+    bot.answer_callback_query(call.id, "Has seleccionado la Opción 1.")
 
-@bot.message_handler(commands=['resultados'])
-def resultados(message):
-    chat_id = message.chat.id
+@bot.callback_query_handler(func=lambda call: call.data == 'opcion2')
+def opcion2_handler(call):
+    bot.answer_callback_query(call.id, "Has seleccionado la Opción 2.")
+"""
+@bot.callback_query_handler(func=lambda call: call.data == '/resultados')
+def resultados(call):
+    chat_id = call.message.chat.id
     mensaje= "Para poder realizar tu seguimiento vas a poder evaluar tus resultados según distintos gráficos de analisis de datos. \n \n 1) Ingrese el comando '/temporal' para poder ver el análisis temporal de tus caracteristicas 🗓 \n \n 2) Ingrese '/correlacion' para ver la relación entre carácteristicas \n \n 3) Ingrese el comando '/boxplot' para revisar la dispersion de datosa en formato de diagrama de cajas "
     bot.send_message(chat_id, mensaje)
 
