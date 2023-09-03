@@ -40,7 +40,7 @@ def procesar_nombre(message):
     chat_id = message.chat.id
     nombre_completo = message.text
     df_pacientes.loc[df_pacientes.shape[0]] = [chat_id, nombre_completo, None]
-    sent_msg=bot.send_message(chat_id, "Gracias, ahora proporciona tu número de teléfono para que podamos contactarte.")
+    sent_msg=bot.send_message(chat_id, "Gracias, ahora proporciona tu número de teléfono📞 para que podamos contactarte.")
     bot.register_next_step_handler(sent_msg, procesar_numero)
     
 def procesar_numero(message):
@@ -52,25 +52,18 @@ def procesar_numero(message):
     df_pacientes.to_csv('datos_pacientes.csv', index=False)
     
 
-@bot.message_handler(commands=['info'])
-def informacion(pm):
-    send_msg=bot.send_message(pm.chat.id, "Voy a darte mas información sobre la tarea de este chatbot : ")
-    send_msg=bot.send_message(pm.chat.id, "El asistente virtual resultante permitirá a los profesionales de la salud realizar un seguimiento más preciso y personalizado de los pacientes con trastorno bipolar. Además, proporcionará a los pacientes una herramienta de autoevaluación que les permitirá monitorear su estado y recibir recomendaciones para el autocuidado. Se espera que este sistema mejore la precisión del diagnóstico, reduzca los tiempos de espera para la intervención y mejore la calidad de vida de los pacientes con trastorno bipolar.")
-    
-
-
 
 
 @bot.callback_query_handler(func=lambda call: call.data == '/entrevista')
 def bienvenida(pm):
     chat_id=pm.message.chat.id
-    send_msg=bot.send_message(chat_id, "Bienvenido a Bipotest, soy un asistente virtual 🤖 que te ayudara con tu diagnóstico y seguimiento de estado del trastorno bipolar")
+    send_msg=bot.send_message(chat_id, "Sigue las instrucciones para responder las preguntas. Al final de la entrevista, podes evaluar tu seguimiento y ver gráficos de estado")
     send_msg=bot.send_message(chat_id, "¿Puedes indicarme tu nombre?")
     bot.register_next_step_handler(send_msg, saludar)
 
 def saludar(pm):
     nombre=pm.text
-    bot.send_message(pm.chat.id, "Hola 👋 "+nombre+", voy a asistirte con tu seguimiento virtual 📝")
+    bot.send_message(pm.chat.id, "Bueno  "+nombre+", voy a asistirte con tu seguimiento virtual 📝")
     animo(pm)
 
 
@@ -267,7 +260,6 @@ def fin_entrevista(pm):
     sent_msg = bot.send_message(pm.chat.id, "Finalizo la entrevista, vamos a analizar los datos envidados...")
 
    
-   
 
     x=np.array([features["animo"], features["motivacion"], features["atencion"],
             features["irritabilidad"], features["ansiedad"], features["calidad_sueño"],
@@ -351,13 +343,11 @@ def show_prediction(pred):
 @bot.message_handler(commands=['help'])
 def handle_help(message):
     chat_id = message.chat.id
-    help_message = "¡Bienvenido! Este bot te permite realizar una entrevista para evaluar tus características. \n Para comenzar, elige la opción que quieras realizar: /entrevista. "
-    help_message += "Sigue las instrucciones para responder las preguntas. Al final de la entrevista, podes evaluar tu seguimiento y ver gráficos de estado."
-    markup = types.InlineKeyboardMarkup(row_width=3) 
+    help_message = "¡Bienvenido!😊 Este bot te permite realizar una entrevista para evaluar tus características. \nPara comenzar, elige la opción que quieras realizar: "
+    markup = types.InlineKeyboardMarkup(row_width=2) 
     itembtn1 = types.InlineKeyboardButton('Entrevista', callback_data='/entrevista') 
     itembtn2 = types.InlineKeyboardButton('Solicitar atención médica', callback_data='/solicitar_derivacion') 
     markup.add(itembtn1, itembtn2)
-    bot.send_message(chat_id,help_message) 
     bot.send_message(chat_id," Para comenzar, elige la opción que quieras realizar:", reply_markup=markup) 
 
 """"
@@ -373,12 +363,21 @@ def opcion2_handler(call):
 @bot.callback_query_handler(func=lambda call: call.data == '/resultados')
 def resultados(call):
     chat_id = call.message.chat.id
-    mensaje= "Para poder realizar tu seguimiento vas a poder evaluar tus resultados según distintos gráficos de analisis de datos. \n \n 1) Ingrese el comando '/temporal' para poder ver el análisis temporal de tus caracteristicas 🗓 \n \n 2) Ingrese '/correlacion' para ver la relación entre carácteristicas \n \n 3) Ingrese el comando '/boxplot' para revisar la dispersion de datosa en formato de diagrama de cajas "
-    bot.send_message(chat_id, mensaje)
+    mensaje= "Para poder realizar tu seguimiento vas a poder evaluar tus resultados según distintos gráficos de analisis de datos."
+    markup = types.InlineKeyboardMarkup(row_width=1) 
+    itembtn1 = types.InlineKeyboardButton('1) Mirar Correlación de variables', callback_data='/correlacion') 
+    itembtn2 = types.InlineKeyboardButton('2) Mirar diagrama de caja', callback_data='/boxplot')
+    itembtn3 = types.InlineKeyboardButton('3) Ver seguimiento Temporal', callback_data='/temporal')
+    markup.add(itembtn1) 
+    markup.add(itembtn2)
+    markup.add(itembtn3)
+    bot.send_message(chat_id,mensaje) 
+    bot.send_message(chat_id,"Elige la opción que quieras ver:", reply_markup=markup) 
+    
 
-@bot.message_handler(commands=['correlacion'])
+@bot.callback_query_handler(func=lambda call: call.data == '/correlacion')
 def mapa_correlacion(pm):
-    bot.send_message(pm.chat.id, "Aquí puedes observar como se relacionan tus datos.")
+    bot.send_message(pm.message.chat.id, "Aquí puedes observar como se relacionan tus datos.")
     df=young["Código"]==features["codigo"]
     dfC=young[df]
     img_buffer = io.BytesIO()
@@ -404,13 +403,14 @@ def mapa_correlacion(pm):
    
 
     # Envía el gráfico al usuario a través de Telegram
-    bot.send_photo(pm.chat.id, photo=img_buffer)
+    bot.send_photo(pm.message.chat.id, photo=img_buffer)
 
 
 
-@bot.message_handler(commands=['boxplot'])
+@bot.callback_query_handler(func=lambda call: call.data == '/boxplot')
+
 def mapa_boxplot(pm):
-    bot.send_message(pm.chat.id, "Aquí puedes observar como se distribuyeron tus datos y cuales fueron valores atípicos.")
+    bot.send_message(pm.message.chat.id, "Aquí puedes observar como se distribuyeron tus datos y cuales fueron valores atípicos.")
     df=young["Código"]==features["codigo"]
     dfC=young[df]
     
@@ -423,15 +423,15 @@ def mapa_boxplot(pm):
    
 
     # Envía el gráfico al usuario a través de Telegram
-    bot.send_photo(pm.chat.id, photo=img_buffer)
+    bot.send_photo(pm.message.chat.id, photo=img_buffer)
 
 
 
 
-@bot.message_handler(commands=['temporal'])
+@bot.callback_query_handler(func=lambda call: call.data == '/temporal')
 def generar_graficos(pm):
-    bot.send_message(pm.chat.id, "Aquí puedes observar como variaron tus comportamientos en el ultimo tiempo.")
-    sent_msg=bot.send_message(pm.chat.id, "¿A partir de cuantos dias atras desea ver los comportamientos? Ingrese el numero de dias .")
+    bot.send_message(pm.message.chat.id, "Aquí puedes observar como variaron tus comportamientos en el ultimo tiempo.")
+    sent_msg=bot.send_message(pm.message.chat.id, "¿A partir de cuantos dias atras desea ver los comportamientos? Ingrese el numero de dias .")
     bot.register_next_step_handler(sent_msg, limite_dias)
 
 def limite_dias(pm):    
@@ -466,11 +466,15 @@ def limite_dias(pm):
 @bot.message_handler(func=lambda message: True)
 def handle_saludo(message):
     if message.text.lower() in ["hola", "Buenas", "ayuda", "saludos"]:
-        bot.reply_to(message, "¡Hola! Soy Bipotest ¿En qué puedo ayudarte?, para mas información ingrese el comando /help")
+        bot.reply_to(message, "¡Hola! 👋 ¿Como estás?, soy Bipotest un asistente virtual 🤖 que te ayudara con tu diagnóstico y seguimiento de estado del trastorno bipolar..... ")
+        handle_help(message)
+
+        
     elif message.text.lower() in ["adiós", "chao", "hasta luego","gracias"]:
         bot.reply_to(message, "¡Hasta luego! Siempre estoy aquí si me necesitas.")
+
     else:
-        bot.reply_to(message, "No entiendo lo que dices. ¿En qué puedo ayudarte? Para mayor información ingrese el comando /help")
+        bot.reply_to(message, "No entiendo lo que dices 😔. ¿En qué puedo ayudarte? Para mayor información ingrese el comando /help")
 
 
 
