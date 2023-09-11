@@ -27,7 +27,7 @@ young = young[young['Código'] != 'O']
 
 
 
-#Funcionalidades que podrían agregarse al chatbot
+#Modulo de solicitud de derivación médica
 
 @bot.callback_query_handler(func=lambda call: call.data == '/solicitar_derivacion')
 def solicitar_derivacion(call):
@@ -52,7 +52,7 @@ def procesar_numero(message):
     df_pacientes.to_csv('datos_pacientes.csv', index=False)
     
 
-
+#Modulo de entrevista
 
 @bot.callback_query_handler(func=lambda call: call.data == '/entrevista')
 def bienvenida(pm):
@@ -280,7 +280,7 @@ def fin_entrevista(pm):
     print(X_test)
     print(y_train)
 
-
+    #Predicción con modulo de Machine learning
     rf = RandomForestClassifier(n_jobs=-1)
     X_train2=X_train.iloc[1]
 
@@ -319,12 +319,12 @@ def fin_entrevista(pm):
             features["cigarrillos"], features["cafeina"],features["alcohol"],features["drogas"],features["despertar"],features["dormir"],features["codigo"],features["fecha"]],index=['Estado de ánimo','Motivación','Problemas de concentración y atención','Irritabilidad','Ansiedad','Calidad del sueño','Número de cigarrillos','Cafeína','Alcohol','Otras drogas','Hora de despertar','Hora a la que te dormiste','Código','Fecha']),ignore_index=True)
     print(youngNew)
     
-    youngNew.to_csv('./diario.csv', sep=';',index=False)
+    youngNew.to_csv('./diario1.csv', sep=';',index=False)
 
     #Guarda en el archivo los datos nuevos
     #youngNew.to_excel('Resultados.xlsx')
     markup = types.InlineKeyboardMarkup(row_width=3) 
-    itembtn = types.InlineKeyboardButton('Seguimiento de datos ', callback_data='/resultados') 
+    itembtn = types.InlineKeyboardButton('Seguimiento de datos 📈 ', callback_data='/resultados') 
     markup.add(itembtn)
     bot.send_message(pm.chat.id,"Gracias por responder, si desea ver los análisis de su datos, pulse el boton para realizar el seguimiento ", reply_markup=markup) 
 
@@ -339,27 +339,30 @@ def show_prediction(pred):
     return msg
 
 
-
+#Modulo de ayuda 
 @bot.message_handler(commands=['help'])
 def handle_help(message):
     chat_id = message.chat.id
-    help_message = "¡Bienvenido!😊 Este bot te permite realizar una entrevista para evaluar tus características. \nPara comenzar, elige la opción que quieras realizar: "
-    markup = types.InlineKeyboardMarkup(row_width=2) 
-    itembtn1 = types.InlineKeyboardButton('Entrevista', callback_data='/entrevista') 
-    itembtn2 = types.InlineKeyboardButton('Solicitar atención médica', callback_data='/solicitar_derivacion') 
-    markup.add(itembtn1, itembtn2)
+    help_message = "¡Bienvenido!😊 Estoy aquí para brindarte apoyo y orientación en relación con el trastorno bipolar. "
+    bot.send_message(chat_id," Estoy aquí para brindarte apoyo y orientación en relación con el trastorno bipolar.")
+    bot.send_message(chat_id,"IMPORTANTE ‼️ recordar que soy un asistente virtual y no un sustituto de la atención médica profesional. Sin embargo, puedo tomar tus datos para que un profesional se ponga en contacto contigo")
+    
+    markup = types.InlineKeyboardMarkup(row_width=1) 
+    itembtn1 = types.InlineKeyboardButton('Entrevista ❓', callback_data='/entrevista') 
+    itembtn2 = types.InlineKeyboardButton('Solicitar atención médica 🩺', callback_data='/solicitar_derivacion') 
+    itembtn3 = types.InlineKeyboardButton('Información sobre el trastorno bipolar ℹ', url="https://www.mayoclinic.org/es/diseases-conditions/bipolar-disorder/symptoms-causes/syc-20355955") 
+
+    markup.add(itembtn1)
+    markup.add(itembtn2)
+    markup.add(itembtn3)
+
+    
     bot.send_message(chat_id," Para comenzar, elige la opción que quieras realizar:", reply_markup=markup) 
 
-""""
-# Manejador para las respuestas a los botones
-@bot.callback_query_handler(func=lambda call: call.data == '/entrevista')
-def opcion1_handler(call):
-    bot.answer_callback_query(call.id, "Has seleccionado la Opción 1.")
 
-@bot.callback_query_handler(func=lambda call: call.data == 'opcion2')
-def opcion2_handler(call):
-    bot.answer_callback_query(call.id, "Has seleccionado la Opción 2.")
-"""
+
+
+#Modulo de evaluación de resultados
 @bot.callback_query_handler(func=lambda call: call.data == '/resultados')
 def resultados(call):
     chat_id = call.message.chat.id
@@ -462,16 +465,18 @@ def limite_dias(pm):
     bot.send_photo(pm.chat.id, photo=img_buffer)
 
 
-
+#Bucle de recepción de mensajes de inicio
 @bot.message_handler(func=lambda message: True)
 def handle_saludo(message):
     if message.text.lower() in ["hola", "Buenas", "ayuda", "saludos"]:
         bot.reply_to(message, "¡Hola! 👋 ¿Como estás?, soy Bipotest un asistente virtual 🤖 que te ayudara con tu diagnóstico y seguimiento de estado del trastorno bipolar..... ")
         handle_help(message)
-
-        
-    elif message.text.lower() in ["adiós", "chao", "hasta luego","gracias"]:
-        bot.reply_to(message, "¡Hasta luego! Siempre estoy aquí si me necesitas.")
+    elif message.text.lower() in ["adiós", "chao", "hasta luego","gracias","chau","muchas gracias"]:
+        bot.reply_to(message, "Gracias por usar el chatbot, estoy aquí si me necesitas. ")
+        markup = types.InlineKeyboardMarkup(row_width=1) 
+        itembtn1 = types.InlineKeyboardButton('Encuesta de feedback💬', url="https://forms.gle/oiCVuP2MaF62iBzn9") 
+        markup.add(itembtn1)
+        bot.send_message(message.chat.id,"Te invitamos a realizar una encuesta que nos permite mejorar:", reply_markup=markup) 
 
     else:
         bot.reply_to(message, "No entiendo lo que dices 😔. ¿En qué puedo ayudarte? Para mayor información ingrese el comando /help")
