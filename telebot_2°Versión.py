@@ -334,7 +334,7 @@ def show_prediction(pred):
         msg = ("El paciente podria tender hacia un episodio de DEPRESIÓN")
     elif pred == 'M':
         msg = ("El paciente podría tender hacía un episodio de MANIA")
-    else:
+    else:istalar 
         msg = ("El paciente posee un estado eutímico")
     return msg
 
@@ -371,16 +371,21 @@ def resultados(call):
     itembtn1 = types.InlineKeyboardButton('1) Mirar Correlación de variables', callback_data='/correlacion') 
     itembtn2 = types.InlineKeyboardButton('2) Mirar diagrama de caja', callback_data='/boxplot')
     itembtn3 = types.InlineKeyboardButton('3) Ver seguimiento Temporal', callback_data='/temporal')
+    itembtn4 = types.InlineKeyboardButton('4) Finalizar conversación', callback_data='/finalizar')
     markup.add(itembtn1) 
     markup.add(itembtn2)
     markup.add(itembtn3)
+    markup.add(itembtn4)
     bot.send_message(chat_id,mensaje) 
     bot.send_message(chat_id,"Elige la opción que quieras ver:", reply_markup=markup) 
+    
     
 
 @bot.callback_query_handler(func=lambda call: call.data == '/correlacion')
 def mapa_correlacion(pm):
     bot.send_message(pm.message.chat.id, "Aquí puedes observar como se relacionan tus datos.")
+    bot.send_message(pm.message.chat.id, "Una matriz de correlaciones es una tabla o una cuadrícula de números que muestra cómo dos o más variables están relacionadas entre sí. En otras palabras, te muestra si hay una conexión o asociación entre diferentes cosas que estás observando o midiendo. Cada número en la matriz representa la correlación entre dos variables. La correlación es un valor que va de -1 a 1. \nSi la correlación es cercana a 1, significa que las dos variables están fuertemente relacionadas de manera positiva, lo que significa que cuando una variable aumenta, la otra también tiende a aumentar. \n Si la correlación es cercana a -1, significa que las dos variables están fuertemente relacionadas de manera negativa, lo que significa que cuando una variable aumenta, la otra tiende a disminuir.\nSi la correlación es cercana a 0, significa que no hay una relación fuerte entre las dos variables.")
+
     df=young["Código"]==features["codigo"]
     dfC=young[df]
     img_buffer = io.BytesIO()
@@ -407,7 +412,7 @@ def mapa_correlacion(pm):
 
     # Envía el gráfico al usuario a través de Telegram
     bot.send_photo(pm.message.chat.id, photo=img_buffer)
-
+    resultados(pm)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == '/boxplot')
@@ -427,7 +432,7 @@ def mapa_boxplot(pm):
 
     # Envía el gráfico al usuario a través de Telegram
     bot.send_photo(pm.message.chat.id, photo=img_buffer)
-
+    resultados(pm)
 
 
 
@@ -463,6 +468,14 @@ def limite_dias(pm):
 
     # Envía el gráfico al usuario a través de Telegram
     bot.send_photo(pm.chat.id, photo=img_buffer)
+    resultados(pm)
+
+@bot.callback_query_handler(func=lambda call: call.data == '/finalizar')
+def finalizar(pm):
+    markup = types.InlineKeyboardMarkup(row_width=1) 
+    itembtn1 = types.InlineKeyboardButton('Encuesta de feedback💬', url="https://forms.gle/oiCVuP2MaF62iBzn9") 
+    markup.add(itembtn1)
+    bot.send_message(pm.message.chat.id,"¡Gracias por utilizar nuestro chatbot para obtener información sobre el trastorno bipolar! Estamos interesados en mejorar nuestra plataforma y nos gustaría conocer tu opinión. ¿Te gustaría tomarte un momento para completar una breve encuesta?",reply_markup=markup) 
 
 
 #Bucle de recepción de mensajes de inicio
@@ -473,10 +486,7 @@ def handle_saludo(message):
         handle_help(message)
     elif message.text.lower() in ["adiós", "chao", "hasta luego","gracias","chau","muchas gracias"]:
         bot.reply_to(message, "Gracias por usar el chatbot, estoy aquí si me necesitas. ")
-        markup = types.InlineKeyboardMarkup(row_width=1) 
-        itembtn1 = types.InlineKeyboardButton('Encuesta de feedback💬', url="https://forms.gle/oiCVuP2MaF62iBzn9") 
-        markup.add(itembtn1)
-        bot.send_message(message.chat.id,"Te invitamos a realizar una encuesta que nos permite mejorar:", reply_markup=markup) 
+         
 
     else:
         bot.reply_to(message, "No entiendo lo que dices 😔. ¿En qué puedo ayudarte? Para mayor información ingrese el comando /help")
