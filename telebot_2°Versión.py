@@ -1,19 +1,25 @@
-import telebot
-import numpy as np
-import pandas as pd
-import telebot
-from telebot import types 
+import telebot #Libreria de api telegram
+import numpy as np #Libreria de 
+import pandas as pd 
+from telebot import types #Utilizo la herramienta types de la libreria telebot 
 import re
-import matplotlib.pyplot as plt
-import seaborn as sns
-import io
-import datetime
+import matplotlib.pyplot as plt #Utilizo la libreria matplot para los graficos
+import seaborn as sns #Utilizo libreria de seaborn para graficar
+import io 
+import datetime #Utilizo datetime para manejo de fechas
 import timedelta
+from tabulate import tabulate
+
+#Importo herramientas de machine learnin de sklearn
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import cross_val_score
 from sklearn.tree import DecisionTreeClassifier
+
+from statsmodels.tsa.arima.model import ARIMA
+
+from sklearn.metrics import mean_squared_error
 
 features = {}
 df_pacientes = pd.DataFrame(columns=['chat_id', 'nombre_completo', 'numero_telefono'])
@@ -24,7 +30,7 @@ bot = telebot.TeleBot("6242548752:AAEpxVC4y-4KgMy5hCY7A8xOIWjbP0YRopc")
 
 young = pd.read_csv('./diario.csv', sep=';')
 young = young[young['Código'] != 'O']
-
+plt.figure(figsize=(20, 20))
 
 
 #Modulo de solicitud de derivación médica
@@ -328,29 +334,48 @@ def fin_entrevista(pm):
     markup.add(itembtn)
     bot.send_message(pm.chat.id,"Gracias por responder, si desea ver los análisis de su datos, pulse el boton para realizar el seguimiento ", reply_markup=markup) 
 
+#Mensajes a mostrar según predicción de estado
 def show_prediction(pred):
     msg = ''
     if pred == 'D':
         msg = ("El paciente podria tender hacia un episodio de DEPRESIÓN")
     elif pred == 'M':
         msg = ("El paciente podría tender hacía un episodio de MANIA")
-    else:istalar 
+    else:
         msg = ("El paciente posee un estado eutímico")
     return msg
 
-
-#Modulo de ayuda 
 @bot.message_handler(commands=['help'])
-def handle_help(message):
+def consentimiento(message):
     chat_id = message.chat.id
     help_message = "¡Bienvenido!😊 Estoy aquí para brindarte apoyo y orientación en relación con el trastorno bipolar. "
-    bot.send_message(chat_id," Estoy aquí para brindarte apoyo y orientación en relación con el trastorno bipolar.")
-    bot.send_message(chat_id,"IMPORTANTE ‼️ recordar que soy un asistente virtual y no un sustituto de la atención médica profesional. Sin embargo, puedo tomar tus datos para que un profesional se ponga en contacto contigo")
+    bot.send_message(chat_id,help_message)
+    bot.send_message(chat_id,"Por favor, tómate un momento para revisar la información siguiente....")
+    bot.send_message(chat_id,"*La privacidad y la confidencialidad de tus datos son fundamentales para nosotros.*\nTu información se manejará de acuerdo con las leyes de protección de datos aplicables y no se compartirá con terceros sin tu consentimiento.", parse_mode="Markdown")
+    bot.send_message(chat_id,"Al utilizar esta aplicación, aceptas voluntariamente los términos y condiciones mencionados. Tu participación es voluntaria, y puedes optar por no utilizar la aplicación si no estás de acuerdo con estos términos.")
+    
+    markup = types.InlineKeyboardMarkup(row_width=1) 
+    itembtn1 = types.InlineKeyboardButton('Sí, acepto✅', callback_data='/comenzar') 
+    itembtn2 = types.InlineKeyboardButton('No, no estoy de acuerdo✖️', callback_data='/finalizar') 
+    
+    markup.add(itembtn1)
+    markup.add(itembtn2)
+    
+
+    bot.send_message(chat_id," ¿Estás de acuerdo con las condiciones mencionadas y deseas utilizar la aplicación?:", reply_markup=markup) 
+
+
+
+#Modulo de ayuda 
+@bot.callback_query_handler(func=lambda call: call.data == '/comenzar')
+def handle_help(call):
+    chat_id = call.message.chat.id
+    bot.send_message(chat_id,"*IMPORTANTE* ‼️ recordar que soy un asistente virtual y no un sustituto de la atención médica profesional. Sin embargo, puedo tomar tus datos para que un profesional se ponga en contacto contigo", parse_mode="Markdown")
     
     markup = types.InlineKeyboardMarkup(row_width=1) 
     itembtn1 = types.InlineKeyboardButton('Entrevista ❓', callback_data='/entrevista') 
     itembtn2 = types.InlineKeyboardButton('Solicitar atención médica 🩺', callback_data='/solicitar_derivacion') 
-    itembtn3 = types.InlineKeyboardButton('Información sobre el trastorno bipolar ℹ', url="https://www.mayoclinic.org/es/diseases-conditions/bipolar-disorder/symptoms-causes/syc-20355955") 
+    itembtn3 = types.InlineKeyboardButton('Información sobre el trastorno bipolar ℹ',  callback_data='/info_bipolar') 
 
     markup.add(itembtn1)
     markup.add(itembtn2)
@@ -360,8 +385,19 @@ def handle_help(message):
     bot.send_message(chat_id," Para comenzar, elige la opción que quieras realizar:", reply_markup=markup) 
 
 
+@bot.callback_query_handler(func=lambda call: call.data == '/info_bipolar')
+def info(call):
+    chat_id = call.message.chat.id
+    markup = types.InlineKeyboardMarkup(row_width=1) 
+    itembtn1 = types.InlineKeyboardButton('Más información sobre el trastorno bipolar', url="https://www.mayoclinic.org/es/diseases-conditions/bipolar-disorder/symptoms-causes/syc-20355955") 
+    markup.add(itembtn1) 
+    bot.send_message(chat_id,"*El trastorno bipolar*, también conocido como enfermedad maníaco-depresiva, es una afección psiquiátrica crónica que involucra oscilaciones anormales en el estado de ánimo, que pueden variar desde episodios de euforia extrema (manía) hasta episodios de depresión profunda.", parse_mode="Markdown")
+    bot.send_message(chat_id,"*Síntomas:* \n\n*Manía:* Durante los episodios maníacos, las personas pueden experimentar un aumento excesivo de la energía, irritabilidad, hiperactividad, pensamientos acelerados y comportamientos impulsivos. \n\n*Depresión:* Los episodios depresivos se caracterizan por una profunda tristeza, falta de energía, apatía, dificultad para dormir, pérdida de interés en actividades previamente disfrutadas y pensamientos de suicidio.", parse_mode="Markdown") 
+    bot.send_message(chat_id,"*Impacto:* El trastorno bipolar puede afectar significativamente la calidad de vida, las relaciones y el funcionamiento diario. Sin embargo, con un tratamiento adecuado, muchas personas pueden llevar una vida plena.", parse_mode="Markdown") 
+    bot.send_message(chat_id,"*Importancia del Diagnóstico y Tratamiento:* El diagnóstico temprano y el tratamiento adecuado son fundamentales para gestionar el trastorno bipolar y prevenir complicaciones. El apoyo y la comprensión de amigos y familiares también son esenciales.", parse_mode="Markdown") 
 
-
+    bot.send_message(chat_id,"Elige la opción que quieras ver:", reply_markup=markup) 
+    
 #Modulo de evaluación de resultados
 @bot.callback_query_handler(func=lambda call: call.data == '/resultados')
 def resultados(call):
@@ -371,23 +407,59 @@ def resultados(call):
     itembtn1 = types.InlineKeyboardButton('1) Mirar Correlación de variables', callback_data='/correlacion') 
     itembtn2 = types.InlineKeyboardButton('2) Mirar diagrama de caja', callback_data='/boxplot')
     itembtn3 = types.InlineKeyboardButton('3) Ver seguimiento Temporal', callback_data='/temporal')
-    itembtn4 = types.InlineKeyboardButton('4) Finalizar conversación', callback_data='/finalizar')
+    itembtn4 = types.InlineKeyboardButton('4) Ver variables descriptivas', callback_data='/descriptivas')
+    itembtn5 = types.InlineKeyboardButton('5) Volver al inicio', callback_data='/comenzar')
+    itembtn6 = types.InlineKeyboardButton('6) Finalizar conversación', callback_data='/finalizar')
     markup.add(itembtn1) 
     markup.add(itembtn2)
     markup.add(itembtn3)
     markup.add(itembtn4)
+    markup.add(itembtn5)
+    markup.add(itembtn6)
     bot.send_message(chat_id,mensaje) 
     bot.send_message(chat_id,"Elige la opción que quieras ver:", reply_markup=markup) 
     
+#Gráfico de correlación
+@bot.callback_query_handler(func=lambda call: call.data == '/descriptivas')
+def variables_descriptivas(pm):
+    bot.send_message(pm.message.chat.id, "Aquí puedes observar como se comportan las variables de este paciente....")
+    df=young[young["Código"]==features["codigo"]]
+    #Agrega una columna con las etiquetas correspondientes.
     
+    descriptivas=df.describe()
+    descriptivas['Etiqueta'] = ['Count', 'Media', 'std','min','25%', '50%', '75%', 'Max']
+    # Reorganiza las columnas para que la columna de etiquetas sea la primera.
+    descriptivas = descriptivas[['Etiqueta'] + list(descriptivas.columns[:-1])]
+    fig, ax = plt.subplots(figsize=(40,20))
+    ax.axis('off')
 
+    # Crea una tabla.
+    tabla = ax.table(cellText=descriptivas.values,
+                 colLabels=descriptivas.columns,
+                 cellLoc='center',
+                 loc='center',
+                 colColours=['#f2f2f2']*len(descriptivas.columns),
+                 bbox=[0, 0, 1, 1]
+                 )
+    tabla.auto_set_font_size(False)
+    tabla.set_fontsize(21)  # Ajusta el tamaño de la fuente según tus preferencias.
+
+    # Guarda la imagen en un buffer.
+    buffer = io.BytesIO() 
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    plt.close()
+    bot.send_photo(pm.message.chat.id, photo=buffer)
+    resultados(pm)
+
+#Gráfico de correlación
 @bot.callback_query_handler(func=lambda call: call.data == '/correlacion')
 def mapa_correlacion(pm):
-    bot.send_message(pm.message.chat.id, "Aquí puedes observar como se relacionan tus datos.")
-    bot.send_message(pm.message.chat.id, "Una matriz de correlaciones es una tabla o una cuadrícula de números que muestra cómo dos o más variables están relacionadas entre sí. En otras palabras, te muestra si hay una conexión o asociación entre diferentes cosas que estás observando o midiendo. Cada número en la matriz representa la correlación entre dos variables. La correlación es un valor que va de -1 a 1. \nSi la correlación es cercana a 1, significa que las dos variables están fuertemente relacionadas de manera positiva, lo que significa que cuando una variable aumenta, la otra también tiende a aumentar. \n Si la correlación es cercana a -1, significa que las dos variables están fuertemente relacionadas de manera negativa, lo que significa que cuando una variable aumenta, la otra tiende a disminuir.\nSi la correlación es cercana a 0, significa que no hay una relación fuerte entre las dos variables.")
-
+    
+    bot.send_message(pm.message.chat.id, "Voy a darte una breve introducción: \n\n*Una matriz de correlaciones* es una tabla o una cuadrícula de números que muestra cómo dos o más variables están relacionadas entre sí. \n\n\n En otras palabras, te muestra si hay una conexión o asociación entre diferentes cosas que estás observando o midiendo. Cada número en la matriz representa la correlación entre dos variables. \n\n\n La correlación es un valor que va de -1 a 1: \n\n\n *-Si la correlación es cercana a 1*, significa que las dos variables están fuertemente relacionadas de manera positiva, lo que significa que cuando una variable aumenta, la otra también tiende a aumentar. \n\n\n *- Si la correlación es cercana a -1*, significa que las dos variables están fuertemente relacionadas de manera negativa, lo que significa que cuando una variable aumenta, la otra tiende a disminuir. \n\n\n *- Si la correlación es cercana a 0*, significa que no hay una relación fuerte entre las dos variables.", parse_mode="Markdown")
+    bot.send_message(pm.message.chat.id, "Aquí puedes observar como se relacionan tus datos....")
     df=young["Código"]==features["codigo"]
-    dfC=young[df]
+    dfC=young[df].drop("Ciclo menstrual",axis=1)
     img_buffer = io.BytesIO()
     plt.figure(figsize=(10, 10))
     
@@ -412,9 +484,10 @@ def mapa_correlacion(pm):
 
     # Envía el gráfico al usuario a través de Telegram
     bot.send_photo(pm.message.chat.id, photo=img_buffer)
+    plt.clf()
     resultados(pm)
 
-
+#Graficos de diagrama de caja
 @bot.callback_query_handler(func=lambda call: call.data == '/boxplot')
 
 def mapa_boxplot(pm):
@@ -423,7 +496,7 @@ def mapa_boxplot(pm):
     dfC=young[df]
     
     img_buffer = io.BytesIO()
-    plt.figure(figsize=(8, 6))
+    
     dfC.boxplot(column=["Motivación","Calidad del sueño","Ansiedad","Irritabilidad","Estado de ánimo"],figsize=(15, 15))
     plt.savefig(img_buffer, format='png')
 
@@ -432,29 +505,31 @@ def mapa_boxplot(pm):
 
     # Envía el gráfico al usuario a través de Telegram
     bot.send_photo(pm.message.chat.id, photo=img_buffer)
+    plt.clf()
     resultados(pm)
-
 
 
 @bot.callback_query_handler(func=lambda call: call.data == '/temporal')
 def generar_graficos(pm):
     bot.send_message(pm.message.chat.id, "Aquí puedes observar como variaron tus comportamientos en el ultimo tiempo.")
-    sent_msg=bot.send_message(pm.message.chat.id, "¿A partir de cuantos dias atras desea ver los comportamientos? Ingrese el numero de dias .")
+    sent_msg=bot.send_message(pm.message.chat.id, "¿A partir de que fecha desea ver los comportamientos? Ingrese en formato AAAA-MM-DD .")
     bot.register_next_step_handler(sent_msg, limite_dias)
 
 def limite_dias(pm):    
-    # Utiliza las respuestas almacenadas en respuestas_entrevista[chat_id]
-    # para generar tus gráficos
-    dias=int(pm.text)
+    
+    fecha_inicio=pd.to_datetime(pm.text)
 
+    fecha_fin=fecha_inicio + datetime.timedelta(days=90)
     young['fecha_datetime'] = pd.to_datetime(young['Fecha'], format='%d/%m/%Y')
-    limite_inferior = current_day - datetime.timedelta(days=dias)
+    #limite_inferior = current_day - datetime.timedelta(days=dias)
+
     
     filtrado=young[(young["Código"]==features["codigo"])]
+
                    
-    filtrado_fecha=filtrado[filtrado['fecha_datetime']>=pd.to_datetime(limite_inferior)]
+    filtrado_fecha=filtrado[(filtrado['fecha_datetime'] >= fecha_inicio) & (filtrado['fecha_datetime'] <= fecha_fin)]
     
-    plt.figure(figsize=(30, 10))
+    
     caracteristicas=['Motivación','Calidad del sueño','Ansiedad','Irritabilidad','Estado de ánimo']
     for feature in caracteristicas:
         sns.lineplot(x='fecha_datetime', y=feature,data=filtrado_fecha, label=feature)
@@ -464,11 +539,58 @@ def limite_dias(pm):
     img_buffer = io.BytesIO()
     plt.savefig(img_buffer, format='png')
     img_buffer.seek(0)
-   
-
     # Envía el gráfico al usuario a través de Telegram
     bot.send_photo(pm.chat.id, photo=img_buffer)
+    plt.clf()
+    markup = types.InlineKeyboardMarkup(row_width=1) 
+    itembtn1 = types.InlineKeyboardButton('Sí✅', callback_data='/prediccion') 
+    itembtn2 = types.InlineKeyboardButton('No✖️', callback_data='/resultados') 
+    
+    markup.add(itembtn1)
+    markup.add(itembtn2)
+    bot.send_message(pm.chat.id,"¿Quiere conocer una predicción de su estado de ánimo en los próximos días?", reply_markup=markup) 
+
+#Módulo de predicción en secuencia temporal de estado de ánimo
+@bot.callback_query_handler(func=lambda call: call.data == '/prediccion')
+def generar_prediccion(pm):
+    fecha_inicio=pd.to_datetime('2017-05-01')
+    fecha_fin=pd.to_datetime('2018-12-31')
+    filtrado=young[(young["Código"]==features["codigo"])]
+    filtrado=filtrado[(filtrado['fecha_datetime'] >= fecha_inicio) & (filtrado['fecha_datetime'] <= fecha_fin)]
+    filtrado.set_index('fecha_datetime', inplace=True)
+    duplicates = filtrado.index[filtrado.index.duplicated()]
+    filtrado = filtrado[~filtrado.index.duplicated()]
+    bot.send_message(pm.message.chat.id, "A tráves del algoritmo de ARIMA podemos predecir como será tu estado de ánimo a futuro.")
+    # Ajustar el modelo ARIMA para predecir el estado de ánimo (por ejemplo)
+    p = 1  # Orden del componente autoregresivo
+    d = 1  # Orden de diferenciación
+    q = 1  # Orden del componente de media móvil
+
+    # Ajustar el modelo ARIMA para el estado de ánimo
+    model = ARIMA(filtrado['Motivación'], order=(p, d, q))
+    results = model.fit()
+
+    # Realizar predicciones para el estado de ánimo (por ejemplo)
+    forecast_steps = 90  # Número de pasos a predecir (30 días en este caso)
+    forecast = results.get_forecast(steps=forecast_steps).predicted_mean
+
+    img_buffer = io.BytesIO()
+    
+    # Visualizar las predicciones para el estado de ánimo
+    
+    plt.plot(filtrado.index, filtrado['Estado de ánimo'], label='Estado de ánimo')
+    plt.plot(pd.date_range(start=filtrado.index[-1], periods=forecast_steps, freq='D'), forecast, label='Predicción de Estado de ánimo',linestyle='dashed')
+    plt.title('Predicción de Estado de ánimo de un Paciente Bipolar con ARIMA')
+    plt.xlabel('Fecha')
+    plt.ylabel('Puntuación de Estado de ánimo')
+    plt.grid(True)
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    # Envía el gráfico al usuario a través de Telegram
+    bot.send_photo(pm.message.chat.id, photo=img_buffer)
+    plt.clf()
     resultados(pm)
+
 
 @bot.callback_query_handler(func=lambda call: call.data == '/finalizar')
 def finalizar(pm):
@@ -483,7 +605,7 @@ def finalizar(pm):
 def handle_saludo(message):
     if message.text.lower() in ["hola", "Buenas", "ayuda", "saludos"]:
         bot.reply_to(message, "¡Hola! 👋 ¿Como estás?, soy Bipotest un asistente virtual 🤖 que te ayudara con tu diagnóstico y seguimiento de estado del trastorno bipolar..... ")
-        handle_help(message)
+        consentimiento(message)
     elif message.text.lower() in ["adiós", "chao", "hasta luego","gracias","chau","muchas gracias"]:
         bot.reply_to(message, "Gracias por usar el chatbot, estoy aquí si me necesitas. ")
          
