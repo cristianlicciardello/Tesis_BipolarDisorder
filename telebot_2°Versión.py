@@ -323,9 +323,9 @@ def fin_entrevista(pm):
     print(accuracy_score(y_test,y_pred_test))
     
     print("La predicción de su estado a traves de algoritmo de Random Forest es; ", show_prediction(y_pred))
-    sent_msg = bot.send_message(pm.chat.id,"La predicción de su estado a traves de algoritmo de Random Forest es: ")
+    sent_msg = bot.send_message(pm.chat.id,"*La predicción de su estado a traves de algoritmo de Random Forest es*: ", parse_mode="Markdown")
     sent_msg = bot.send_message(pm.chat.id,show_prediction(rf.predict(x)))
-    sent_msg = bot.send_message(pm.chat.id,"La predicción de su estado a traves de algoritmo de arbol de decisión es: ")
+    sent_msg = bot.send_message(pm.chat.id,"*La predicción de su estado a traves de algoritmo de arbol de decisión es*: ", parse_mode="Markdown")
     sent_msg = bot.send_message(pm.chat.id,show_prediction(dt.predict(x)))
 
 
@@ -474,7 +474,7 @@ def mapa_correlacion(pm):
     df=young["ID"]==features["ID"]
     dfC=young[df].drop(["Ciclo menstrual","ID"],axis=1)
     img_buffer = io.BytesIO()
-    plt.figure(figsize=(10, 10))
+    plt.figure(figsize=(15, 15))
     
     sns.heatmap(
         dfC.corr(),
@@ -649,6 +649,7 @@ def generar_prediccion(pm):
     plt.ylabel('Puntuación de Estado de ánimo',fontsize=18)
     plt.tick_params(axis='both', labelsize=16)
     plt.grid(True)
+    plt.xticks(rotation=90)
     plt.savefig(img_buffer, format='png')
     img_buffer.seek(0)
     # Envía el gráfico al usuario a través de Telegram
