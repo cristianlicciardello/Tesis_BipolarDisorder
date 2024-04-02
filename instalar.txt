@@ -4,3 +4,7 @@ conda install numpy
 conda install pandas
 pip install -U scikit-learn
 pip install pyTelegramBotAPI
+pip install timedelta
+pip install io
+pip install datetime
+pip install statsmodels
