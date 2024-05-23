@@ -15,7 +15,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import cross_val_score
-from sklearn.tree import DecisionTreeClassifier
+#from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from statsmodels.tsa.arima.model import ARIMA
 from sklearn.metrics import mean_squared_error
 
@@ -301,8 +302,8 @@ def fin_entrevista(pm):
     rf = RandomForestClassifier(n_jobs=-1)
     X_train2=X_train.iloc[1]
 
-    dt = DecisionTreeClassifier(max_depth=10, min_samples_leaf=15)
-    dt.fit(X_train, y_train)
+    gb = GradientBoostingClassifier(n_estimators=200,learning_rate=0.2,max_depth=5,min_samples_split=5,subsample=0.8)
+    gb.fit(X_train, y_train)
 
     rf.fit(X_train, y_train)
     scores = cross_val_score(rf, X_test, y_test)
@@ -325,8 +326,8 @@ def fin_entrevista(pm):
     print("La predicción de su estado a traves de algoritmo de Random Forest es; ", show_prediction(y_pred))
     sent_msg = bot.send_message(pm.chat.id,"*La predicción de su estado a traves de algoritmo de Random Forest es*: ", parse_mode="Markdown")
     sent_msg = bot.send_message(pm.chat.id,show_prediction(rf.predict(x)))
-    sent_msg = bot.send_message(pm.chat.id,"*La predicción de su estado a traves de algoritmo de arbol de decisión es*: ", parse_mode="Markdown")
-    sent_msg = bot.send_message(pm.chat.id,show_prediction(dt.predict(x)))
+    sent_msg = bot.send_message(pm.chat.id,"*La predicción de su estado a traves de algoritmo de Gradient Boosting es*: ", parse_mode="Markdown")
+    sent_msg = bot.send_message(pm.chat.id,show_prediction(gb.predict(x)))
 
 
     print ("\n")
@@ -353,7 +354,7 @@ def show_prediction(pred):
     elif pred == 'M':
         msg = ("El paciente podría tender hacía un episodio de MANIA")
     else:
-        msg = ("El paciente posee un estado eutímico")
+        msg = ("El paciente posee un estado EUTIMICO")
     return msg
 
 @bot.message_handler(commands=['help'])
@@ -631,7 +632,7 @@ def generar_prediccion(pm):
     q = 1  # Orden del componente de media móvil
 
     # Ajustar el modelo ARIMA para el estado de ánimo
-    model = ARIMA(filtrado['Motivación'], order=(p, d, q))
+    model = ARIMA(filtrado['Estado de ánimo'], order=(p, d, q))
     results = model.fit()
 
     # Realizar predicciones para el estado de ánimo (por ejemplo)
@@ -678,7 +679,7 @@ def handle_saludo(message):
     elif message.text.lower() in ["ayuda","sos","socorro"]:
         urgencia(message)
     else:
-        bot.reply_to(message, "No entiendo lo que dices 😔. ¿En qué puedo ayudarte? Para mayor información ingrese el comando /help")
+        bot.reply_to(message, "No entiendo lo que dices 😔. ¿En qué puedo ayudarte? Para mayor información ingrese el comando /help ó Saludame con un Hola para comenzar nuevamente")
 
 
 
